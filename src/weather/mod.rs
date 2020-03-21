@@ -3,11 +3,13 @@ mod forecast;
 mod forest_fire;
 mod particulates;
 
+use chrono::prelude::*;
+use serde::Serialize;
+
 use aws::{get_aws_weather, AWS};
 use forecast::{get_forecast, Forecast};
 use forest_fire::{get_forest_fire, ForestFire};
 use particulates::{get_particulates, Particulates};
-use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct WindDirection {
@@ -17,6 +19,7 @@ pub struct WindDirection {
 
 #[derive(Debug, Serialize)]
 pub struct Weather {
+    timestamp: i64,
     aws: Vec<AWS>,
     forecast: Vec<Forecast>,
     forest_fire: ForestFire,
@@ -32,7 +35,10 @@ pub async fn get_weather() -> Weather {
     let (aws, forecast, forest_fire, particulates) =
         tokio::join!(aws, forecast, forest_fire, particulates);
 
+    let timestamp = Local::now().timestamp_millis();
+
     Weather {
+        timestamp,
         aws,
         forecast,
         forest_fire,
