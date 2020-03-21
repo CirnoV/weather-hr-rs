@@ -10,8 +10,18 @@ pub enum ForecastLocation {
     Sudong = 4282034000,
 }
 
+impl ForecastLocation {
+    pub fn to_string(&self) -> String {
+        match self {
+            ForecastLocation::Wontong => String::from("원통"),
+            ForecastLocation::Sudong => String::from("수동"),
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct Forecast {
+    location: String,
     timestamp: i64,
     temperature: Option<f64>,
     humidity: Option<f64>,
@@ -75,6 +85,7 @@ fn get_forecast_timestamp(document: &Html) -> i64 {
 }
 
 async fn get_forecast_data(location: ForecastLocation) -> Option<Forecast> {
+    let location_name = location.to_string();
     let url = format!(
         "https://www.weather.go.kr/plus/rest/land/timeseries-body.jsp?code={}&unit=m%2Fs",
         location as u32
@@ -101,6 +112,7 @@ async fn get_forecast_data(location: ForecastLocation) -> Option<Forecast> {
     let humidity: Option<f64> = parse_humidity(&elem_to_string(&dd[offset + 2]));
 
     Some(Forecast {
+        location: location_name,
         timestamp,
         humidity,
         temperature,
