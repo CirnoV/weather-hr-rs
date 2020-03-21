@@ -76,13 +76,16 @@ fn translate_cardinal_point(point: String) -> Option<String> {
     }
 }
 
-async fn get_weather(location: AWSLocation) -> AWS {
+async fn get_weather(location: AWSLocation) -> Option<AWS> {
     let location_name = location.to_string();
     let url = format!(
         "https://www.weather.go.kr/cgi-bin/aws/nph-aws_txt_min_cal_test?0&0&MINDB_1M&{}&a&M",
         location as u32
     );
-    let html: String = request(&url).await.unwrap();
+    let html: String = match request(&url).await {
+        Ok(res) => res,
+        Err(_) => return None,
+    };
     let document = Html::parse_document(&html);
     let tr = Selector::parse("table > tbody > tr > td > table > tbody > tr").unwrap();
     let td = Selector::parse("td").unwrap();
@@ -127,11 +130,11 @@ async fn get_weather(location: AWSLocation) -> AWS {
         .filter(|aws| aws.temperature != None || aws.timestamp > now)
         .collect();
 
-    AWS {
+    Some(AWS {
         location: location_name,
         source: url,
         data: aws_data,
-    }
+    })
 }
 
 pub async fn get_aws_weather() -> Vec<AWS> {
@@ -144,6 +147,13 @@ pub async fn get_aws_weather() -> Vec<AWS> {
         get_weather(AWSLocation::Haean),
     );
 
-    let aws: Vec<AWS> = vec![wontong, seohwa, jinburyeong, hyangnobong, inje, haean];
+    let aws: Vec<Option<AWS>> = vec![wontong, seohwa, jinburyeong, hyangnobong, inje, haean];
+    let aws: Vec<AWS> = aws
+        .into_iter()
+        .filter_map(|x: Option<AWS>| match x {
+            Some(x) => Some(x),
+            None => None,
+        })
+        .collect();
     aws
 }

@@ -23,12 +23,15 @@ struct Realcitydata {
 }
 
 pub async fn get_particulates() -> Particulates {
-    let airgangwon: AirGangwon = reqwest::get(AIR_GANGWON_URI)
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+    let airgangwon: AirGangwon = match reqwest::get(AIR_GANGWON_URI).await {
+        Ok(res) => res.json().await.unwrap(),
+        Err(_) => {
+            return Particulates {
+                pm10: None,
+                pm25: None,
+            }
+        }
+    };
     let inje: &Realcitydata = airgangwon
         .realcitydata
         .iter()

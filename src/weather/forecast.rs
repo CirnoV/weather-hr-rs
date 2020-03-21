@@ -74,12 +74,15 @@ fn get_forecast_timestamp(document: &Html) -> i64 {
     timestamp
 }
 
-async fn get_forecast_data(location: ForecastLocation) -> Forecast {
+async fn get_forecast_data(location: ForecastLocation) -> Option<Forecast> {
     let url = format!(
         "https://www.weather.go.kr/plus/rest/land/timeseries-body.jsp?code={}&unit=m%2Fs",
         location as u32
     );
-    let html: String = request(&url).await.unwrap();
+    let html: String = match request(&url).await {
+        Ok(res) => res,
+        Err(_) => return None,
+    };
     let document = Html::parse_document(&html);
     let dl = Selector::parse("div.now_weather1 > dl").unwrap();
     let dd = Selector::parse("dd").unwrap();
@@ -97,13 +100,13 @@ async fn get_forecast_data(location: ForecastLocation) -> Forecast {
     let (wind_direction, wind_speed) = parse_wind(&elem_to_string(&dd[offset + 1]));
     let humidity: Option<f64> = parse_humidity(&elem_to_string(&dd[offset + 2]));
 
-    Forecast {
+    Some(Forecast {
         timestamp,
         humidity,
         temperature,
         wind_direction,
         wind_speed,
-    }
+    })
 }
 
 pub async fn get_forecast() -> Vec<Forecast> {
@@ -112,6 +115,13 @@ pub async fn get_forecast() -> Vec<Forecast> {
         get_forecast_data(ForecastLocation::Sudong),
     );
 
-    let forecast: Vec<Forecast> = vec![wontong, sudong];
+    let forecast: Vec<Option<Forecast>> = vec![wontong, sudong];
+    let forecast: Vec<Forecast> = forecast
+        .into_iter()
+        .filter_map(|x: Option<Forecast>| match x {
+            Some(value) => Some(value),
+            None => None,
+        })
+        .collect::<Vec<_>>();
     forecast
 }
