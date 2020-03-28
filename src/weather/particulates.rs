@@ -2,20 +2,20 @@ use serde::{Deserialize, Serialize};
 
 const AIR_GANGWON_URI: &str = "http://www.airgangwon.go.kr/include/php/json/json_RealCityData.php";
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Particulates {
     pm10: Option<f64>,
     pm25: Option<f64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct AirGangwon {
     date: String,
     time: String,
     realcitydata: Vec<Realcitydata>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct Realcitydata {
     cityname: String,
     pm10: ::serde_json::Value,

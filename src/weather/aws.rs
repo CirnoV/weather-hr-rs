@@ -31,14 +31,14 @@ impl AWSLocation {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct AWS {
     location: String,
     source: String,
     data: Vec<AWSData>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct AWSData {
     timestamp: i64,
     rainfall_per_day: Option<f64>,

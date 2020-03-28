@@ -8,7 +8,7 @@ use scraper::{ElementRef, Html, Selector};
 
 const FOREST_FIRE_URI: &str = "http://forestfire.nifos.go.kr/mobile/jsp/fireGrade.jsp?cd=42&cdName=%EA%B0%95%EC%9B%90%EB%8F%84&subCd=42810&subCdName=%EC%9D%B8%EC%A0%9C%EA%B5%B0";
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct ForestFire {
     value: Option<f64>,
 }

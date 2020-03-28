@@ -19,7 +19,7 @@ impl ForecastLocation {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Forecast {
     location: String,
     timestamp: i64,
