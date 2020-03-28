@@ -5,26 +5,13 @@ extern crate regex;
 use actix_web::{middleware, web, App, HttpRequest, HttpResponse, HttpServer};
 use chrono::prelude::*;
 use chrono::Duration;
-use serde::Serialize;
-use std::{collections::BTreeMap, io, sync::Mutex};
+use std::{io, sync::Mutex};
 
 mod request;
 mod utils;
 mod weather;
 
-#[derive(Clone, Serialize, Debug)]
-struct WeatherData {
-    #[serde(flatten)]
-    inner: BTreeMap<i64, weather::Weather>,
-}
-
-impl WeatherData {
-    fn new() -> WeatherData {
-        WeatherData {
-            inner: BTreeMap::new(),
-        }
-    }
-}
+type WeatherData = Vec<weather::Weather>;
 
 async fn index(
     weather: web::Data<Mutex<WeatherData>>,
@@ -34,19 +21,18 @@ async fn index(
     let update_time = *last_updated.lock().unwrap() + Duration::minutes(3);
     let now = Local::now();
     if update_time <= now {
+        *last_updated.lock().unwrap() = now;
         let weather_data = weather::get_weather(now.timestamp_millis()).await;
         {
             let mut weather = weather.lock().unwrap();
-            weather.inner.insert(now.timestamp_millis(), weather_data);
-            let inner: BTreeMap<i64, weather::Weather> = weather
-                .inner
+            weather.push(weather_data);
+            let inner: Vec<weather::Weather> = weather
                 .clone()
                 .into_iter()
-                .filter(|&(k, _)| k > (now - Duration::days(3)).timestamp_millis())
+                .filter(|w| w.timestamp > (now - Duration::days(3)).timestamp_millis())
                 .collect();
-            *weather = WeatherData { inner };
+            *weather = inner;
         };
-        *last_updated.lock().unwrap() = now;
         println!("Updated, {}", now);
     }
     HttpResponse::Ok().json(&*weather.lock().unwrap())

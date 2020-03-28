@@ -18,7 +18,7 @@ pub struct WindDirection {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Weather {
-    timestamp: i64,
+    pub timestamp: i64,
     aws: Vec<AWS>,
     forecast: Vec<Forecast>,
     forest_fire: ForestFire,
