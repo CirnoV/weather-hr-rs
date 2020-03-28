@@ -2,7 +2,6 @@ name: Rust
 
 on:
   push:
-    branches: [ master ]
     tags:
     - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
@@ -13,13 +12,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with: 
+        ref: master
     - name: Build
       run: cargo build --release --verbose
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: actions/create-release@latest
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
