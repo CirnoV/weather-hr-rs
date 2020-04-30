@@ -1,43 +1,47 @@
 use std::{convert::Infallible, sync::Arc};
 
 use chrono::{prelude::*, Duration};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 pub async fn get_weathers(
     weather: super::WeatherData,
-    last_updated: Arc<Mutex<i64>>,
+    last_updated: Arc<RwLock<i64>>,
     page: Option<usize>,
 ) -> Result<impl warp::Reply, Infallible> {
-    let weather_read = weather.read().await;
-    let len = weather_read.len();
-    let pos: usize = match page {
-        Some(pos) => pos,
-        None => match len > 0 {
-            true => len - 1,
-            false => 0,
-        },
+    let (should_update, now) = {
+        let last_updated_read = last_updated.read().await;
+        let update_time = Local.timestamp_millis(*last_updated_read) + Duration::minutes(3);
+        let now = Local::now();
+        (update_time <= now, now)
     };
-    drop(weather_read);
-
-    let mut last_updated = last_updated.lock().await;
-    let update_time = Local.timestamp_millis(*last_updated) + Duration::seconds(10);
-    let now = Local::now();
-    if update_time <= now {
-        *last_updated = now.timestamp_millis();
+    if should_update {
+        {
+            *last_updated.write().await = now.timestamp_millis();
+        }
         update_weathers(weather.clone(), now).await;
     }
-    let weather_read = weather.read().await;
-    let length = weather_read.len();
-    let weather = match weather_read.get(pos) {
-        Some(weather) => Some(weather.clone()),
-        None => None,
-    };
-    let result = super::WeatherJson {
-        data: weather,
-        length,
-        current: pos,
-    };
-    Ok(warp::reply::json(&result))
+    {
+        let weather_read = weather.read().await;
+        let len = weather_read.len();
+        let pos: usize = match page {
+            Some(pos) => pos,
+            None => match len > 0 {
+                true => len - 1,
+                false => 0,
+            },
+        };
+        let length = weather_read.len();
+        let weather = match weather_read.get(pos) {
+            Some(weather) => Some(weather.clone()),
+            None => None,
+        };
+        let result = super::WeatherJson {
+            data: weather,
+            length,
+            current: pos,
+        };
+        Ok(warp::reply::json(&result))
+    }
 }
 
 async fn update_weathers(weather: super::WeatherData, now: DateTime<Local>) {
@@ -61,6 +65,5 @@ async fn update_weathers(weather: super::WeatherData, now: DateTime<Local>) {
             .filter(|w| w.timestamp > (now - Duration::days(3)).timestamp_millis())
             .collect();
         *weather_write = inner;
-        drop(weather_write);
     }
 }
