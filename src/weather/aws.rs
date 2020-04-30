@@ -157,3 +157,8 @@ pub async fn get_aws_weather() -> Vec<AWS> {
         .collect();
     aws
 }
+
+#[tokio::test]
+async fn test_get_aws_weather() {
+    get_aws_weather().await;
+}

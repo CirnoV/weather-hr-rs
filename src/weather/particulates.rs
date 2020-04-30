@@ -42,3 +42,8 @@ pub async fn get_particulates() -> Particulates {
 
     Particulates { pm10, pm25 }
 }
+
+#[tokio::test]
+async fn test_get_particulates() {
+    get_particulates().await;
+}

@@ -33,3 +33,8 @@ pub async fn get_forest_fire() -> ForestFire {
 
     ForestFire { value }
 }
+
+#[tokio::test]
+async fn test_get_forest_fire() {
+    get_forest_fire().await;
+}

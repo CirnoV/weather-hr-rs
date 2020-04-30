@@ -137,3 +137,8 @@ pub async fn get_forecast() -> Vec<Forecast> {
         .collect::<Vec<_>>();
     forecast
 }
+
+#[tokio::test]
+async fn test_get_forecast() {
+    get_forecast().await;
+}

@@ -55,7 +55,6 @@ async fn get_weathers(
     if update_time <= now {
         *last_updated.lock().unwrap() = now;
         update_weathers(now, &weathers).await;
-        println!("Updated, {}", now);
     }
     let weather = weathers.lock().unwrap();
     let length = weather.len();
