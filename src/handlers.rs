@@ -1,23 +1,24 @@
 use std::{convert::Infallible, sync::Arc};
 
 use chrono::{prelude::*, Duration};
-use tokio::sync::RwLock;
+use tokio::sync::Mutex;
 
 pub async fn get_weathers(
     weather: super::WeatherData,
-    last_updated: Arc<RwLock<i64>>,
+    last_updated: Arc<Mutex<i64>>,
     page: Option<usize>,
 ) -> Result<impl warp::Reply, Infallible> {
     let (should_update, now) = {
-        let last_updated_read = last_updated.read().await;
-        let update_time = Local.timestamp_millis(*last_updated_read) + Duration::minutes(3);
+        let mut last_updated = last_updated.lock().await;
+        let update_time = Local.timestamp_millis(*last_updated) + Duration::minutes(3);
         let now = Local::now();
-        (update_time <= now, now)
+        let should_update = update_time <= now;
+        if should_update {
+            *last_updated = now.timestamp_millis();
+        }
+        (should_update, now)
     };
     if should_update {
-        {
-            *last_updated.write().await = now.timestamp_millis();
-        }
         update_weathers(weather.clone(), now).await;
     }
     {
